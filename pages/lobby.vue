@@ -40,18 +40,18 @@ function charStats(c: any) {
     <header>
       <h1>💣 BomberVerse</h1>
       <nav>
-        <NuxtLink to="/stage">🗺 Stage Mode</NuxtLink>
-        <NuxtLink to="/profile">👤 Profile</NuxtLink>
-        <button @click="logout">Logout</button>
+        <NuxtLink to="/stage">🗺 关卡模式</NuxtLink>
+        <NuxtLink to="/profile">👤 个人资料</NuxtLink>
+        <button @click="logout">退出登录</button>
       </nav>
     </header>
     <main>
       <div class="card">
-        <h2>PVP Battle</h2>
-        <button @click="createPvp">Create Room</button>
+        <h2>PVP 对战</h2>
+        <button @click="createPvp">创建房间</button>
         <div class="join-row">
-          <input v-model="roomId" placeholder="Room Code" maxlength="6" />
-          <button @click="joinRoom">Join</button>
+          <input v-model="roomId" placeholder="房间码" maxlength="6" />
+          <button @click="joinRoom">加入</button>
         </div>
         <p v-if="err" class="err">{{ err }}</p>
       </div>

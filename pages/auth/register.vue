@@ -8,22 +8,22 @@ async function submit() {
   try {
     const data = await $fetch('/api/auth/register', { method: 'POST', body: form })
     save(data); navigateTo('/lobby')
-  } catch (e: any) { err.value = e.data?.message ?? 'Register failed' }
+  } catch (e: any) { err.value = e.data?.message ?? '注册失败，请重试' }
 }
 </script>
 
 <template>
   <div class="auth-wrap">
     <div class="card">
-      <h1>💣 Register</h1>
+      <h1>💣 注册账号</h1>
       <form @submit.prevent="submit">
-        <input v-model="form.email"    type="email"    placeholder="Email"    required />
-        <input v-model="form.username" type="text"     placeholder="Username" required />
-        <input v-model="form.password" type="password" placeholder="Password" required />
+        <input v-model="form.email"    type="email"    placeholder="邮箱"   required />
+        <input v-model="form.username" type="text"     placeholder="用户名" required />
+        <input v-model="form.password" type="password" placeholder="密码"   required />
         <p v-if="err" class="err">{{ err }}</p>
-        <button type="submit">Create Account</button>
+        <button type="submit">创建账号</button>
       </form>
-      <NuxtLink to="/auth/login">Already have an account?</NuxtLink>
+      <NuxtLink to="/auth/login">已有账号？去登录</NuxtLink>
     </div>
   </div>
 </template>

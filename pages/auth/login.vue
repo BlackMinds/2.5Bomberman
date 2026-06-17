@@ -8,7 +8,7 @@ async function submit() {
   try {
     const data = await $fetch('/api/auth/login', { method: 'POST', body: form })
     save(data); navigateTo('/lobby')
-  } catch (e: any) { err.value = e.data?.message ?? 'Login failed' }
+  } catch (e: any) { err.value = e.data?.message ?? '登录失败，请重试' }
 }
 </script>
 
@@ -17,12 +17,12 @@ async function submit() {
     <div class="card">
       <h1>💣 BomberVerse</h1>
       <form @submit.prevent="submit">
-        <input v-model="form.email"    type="email"    placeholder="Email"    required />
-        <input v-model="form.password" type="password" placeholder="Password" required />
+        <input v-model="form.email"    type="email"    placeholder="邮箱"  required />
+        <input v-model="form.password" type="password" placeholder="密码"  required />
         <p v-if="err" class="err">{{ err }}</p>
-        <button type="submit">Login</button>
+        <button type="submit">登录</button>
       </form>
-      <NuxtLink to="/auth/register">No account? Register</NuxtLink>
+      <NuxtLink to="/auth/register">没有账号？去注册</NuxtLink>
     </div>
   </div>
 </template>
