@@ -14,6 +14,12 @@ const BOMB_ITEMS    = ['normal','strong','super','mighty']
 const CLOTHES_ITEMS = ['cloth','leather','chain','holy']
 const SHOES_ITEMS   = ['sandals','runners','swift','extreme']
 
+const ITEM_NAMES: Record<string,string> = {
+  normal:'普通', strong:'强力', super:'超级', mighty:'威猛',
+  cloth:'布衣', leather:'皮甲', chain:'锁甲', holy:'圣甲',
+  sandals:'凉鞋', runners:'跑鞋', swift:'疾风靴', extreme:'极速靴',
+}
+
 const EQUIP_BONUS: Record<string,Record<string,number>> = {
   bomb:    { normal:0, strong:15, super:35, mighty:60 },
   clothes: { cloth:0, leather:50, chain:120, holy:200 },
@@ -38,29 +44,29 @@ const expPct = computed(() => {
 <template>
   <div class="profile">
     <header>
-      <NuxtLink to="/lobby">← Lobby</NuxtLink>
-      <h1>👤 Profile</h1>
-      <button @click="logout">Logout</button>
+      <NuxtLink to="/lobby">← 大厅</NuxtLink>
+      <h1>👤 个人资料</h1>
+      <button @click="logout">退出登录</button>
     </header>
 
     <div v-if="char" class="content">
       <!-- Stats -->
       <section class="card">
-        <h2>Lv {{ char.level }} — {{ char.exp }} / {{ char.level * 100 }} EXP</h2>
+        <h2>Lv {{ char.level }} — {{ char.exp }} / {{ char.level * 100 }} 经验值</h2>
         <div class="exp-bar"><div :style="{width: expPct+'%'}" /></div>
-        <p v-if="char.freePoints > 0" class="points">{{ char.freePoints }} point(s) to allocate</p>
+        <p v-if="char.freePoints > 0" class="points">{{ char.freePoints }} 点可分配</p>
 
         <div class="stats">
           <div class="stat">
-            <span>💣 Damage: {{ char.statDamage }}</span>
+            <span>💣 伤害：{{ char.statDamage }}</span>
             <button v-if="char.freePoints" @click="doAllocate('damage')">+5</button>
           </div>
           <div class="stat">
-            <span>❤️ HP: {{ char.statHp }}</span>
+            <span>❤️ 生命值：{{ char.statHp }}</span>
             <button v-if="char.freePoints" @click="doAllocate('hp')">+20</button>
           </div>
           <div class="stat">
-            <span>👟 Speed: {{ Number(char.statSpeed).toFixed(1) }}</span>
+            <span>👟 速度：{{ Number(char.statSpeed).toFixed(1) }}</span>
             <button v-if="char.freePoints" @click="doAllocate('speed')">+0.3</button>
           </div>
         </div>
@@ -69,35 +75,35 @@ const expPct = computed(() => {
 
       <!-- Equipment -->
       <section class="card">
-        <h2>Equipment</h2>
+        <h2>装备</h2>
         <div class="equip-slots">
           <div class="slot">
-            <label>💣 Bomb (+dmg)</label>
+            <label>💣 炸弹（+伤害）</label>
             <div class="items">
               <button v-for="item in BOMB_ITEMS" :key="item"
                 :class="{ active: char.equipment?.bombType === item }"
                 @click="doEquip('bomb', item)">
-                {{ item }}<br><small>+{{ EQUIP_BONUS.bomb[item] }}</small>
+                {{ ITEM_NAMES[item] }}<br><small>+{{ EQUIP_BONUS.bomb[item] }}</small>
               </button>
             </div>
           </div>
           <div class="slot">
-            <label>👕 Clothes (+hp)</label>
+            <label>👕 衣服（+生命值）</label>
             <div class="items">
               <button v-for="item in CLOTHES_ITEMS" :key="item"
                 :class="{ active: char.equipment?.clothesType === item }"
                 @click="doEquip('clothes', item)">
-                {{ item }}<br><small>+{{ EQUIP_BONUS.clothes[item] }}</small>
+                {{ ITEM_NAMES[item] }}<br><small>+{{ EQUIP_BONUS.clothes[item] }}</small>
               </button>
             </div>
           </div>
           <div class="slot">
-            <label>👟 Shoes (+speed)</label>
+            <label>👟 鞋子（+速度）</label>
             <div class="items">
               <button v-for="item in SHOES_ITEMS" :key="item"
                 :class="{ active: char.equipment?.shoesType === item }"
                 @click="doEquip('shoes', item)">
-                {{ item }}<br><small>+{{ EQUIP_BONUS.shoes[item] }}</small>
+                {{ ITEM_NAMES[item] }}<br><small>+{{ EQUIP_BONUS.shoes[item] }}</small>
               </button>
             </div>
           </div>
@@ -106,9 +112,9 @@ const expPct = computed(() => {
 
       <!-- Leaderboard -->
       <section class="card">
-        <h2>🏆 Leaderboard</h2>
+        <h2>🏆 排行榜</h2>
         <table>
-          <thead><tr><th>#</th><th>Player</th><th>Level</th></tr></thead>
+          <thead><tr><th>#</th><th>玩家</th><th>等级</th></tr></thead>
           <tbody>
             <tr v-for="(row, i) in leaderboard" :key="i">
               <td>{{ i + 1 }}</td><td>{{ row.username }}</td><td>{{ row.level }}</td>
