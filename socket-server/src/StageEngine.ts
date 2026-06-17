@@ -1,7 +1,7 @@
 ﻿import { GameState, PlayerState } from './types'
 import { Enemy, tickEnemy } from './EnemyAI'
 import { createPlayer, createState, COLS, ROWS } from './GameEngine'
-import { STAGE_CONFIG } from '../../server/utils/stageConfig'
+import { STAGE_CONFIG } from './stageConfig'
 
 const ENEMY_SPAWNS = [
   { x: 6, y: 5 }, { x: 8, y: 3 }, { x: 4, y: 7 },
