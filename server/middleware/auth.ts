@@ -1,6 +1,7 @@
 import { verifyToken } from '~/server/utils/auth'
 
 export default defineEventHandler((event) => {
+  if (!event.path.startsWith('/api/')) return
   const open = ['/api/auth/register', '/api/auth/login']
   if (open.some(r => event.path.startsWith(r))) return
 
