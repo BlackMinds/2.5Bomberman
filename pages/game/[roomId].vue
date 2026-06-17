@@ -1,4 +1,4 @@
-﻿<script setup>
+<script setup lang="ts">
 import { connect, emit, disconnect, gameState } from '~/game/network/GameClient'
 
 const route  = useRoute()

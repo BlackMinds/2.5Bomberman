@@ -1,4 +1,4 @@
-﻿<script setup>
+<script setup lang="ts">
 const { headers } = useAuth()
 const stages = ref<any[]>([])
 const err = ref('')
@@ -49,3 +49,4 @@ a { color:#4fc3f7; }
 .best { font-size:.75rem; color:#a5d6a7; }
 .lock { font-size:1.2rem; }
 </style>
+

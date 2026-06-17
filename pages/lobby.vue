@@ -1,4 +1,4 @@
-﻿<script setup>
+<script setup lang="ts">
 const { username, headers, logout } = useAuth()
 const roomId = ref('')
 const err = ref('')
@@ -72,3 +72,4 @@ h2 { text-align:center; }
 input { flex:1; padding:.5rem; border-radius:8px; border:1px solid #444; background:#0f3460; color:#eee; }
 .err { color:#e94560; }
 </style>
+

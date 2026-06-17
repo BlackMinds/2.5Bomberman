@@ -1,4 +1,4 @@
-﻿<script setup>
+<script setup lang="ts">
 const { headers, logout } = useAuth()
 const { char, fetch, allocate, equip } = useCharacter()
 const leaderboard = ref<any[]>([])
@@ -144,3 +144,4 @@ table { width:100%; border-collapse:collapse; }
 th,td { padding:.5rem; text-align:left; border-bottom:1px solid #333; }
 .err { color:#e94560; margin-top:.5rem; }
 </style>
+

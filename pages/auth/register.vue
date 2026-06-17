@@ -1,4 +1,4 @@
-﻿<script setup>
+<script setup lang="ts">
 definePageMeta({ layout: false })
 const { save } = useAuth()
 const form = reactive({ email: '', username: '', password: '' })
@@ -37,3 +37,4 @@ button { width:100%; padding:.75rem; border-radius:8px; border:none; background:
 .err { color:#e94560; font-size:.85rem; }
 a { text-align:center; color:#4fc3f7; font-size:.9rem; }
 </style>
+
