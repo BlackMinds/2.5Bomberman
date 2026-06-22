@@ -1,5 +1,5 @@
 ﻿import Phaser from 'phaser'
-import { toScreen, PLAYER_COLORS, ENEMY_COLOR, COLS, ROWS } from '../constants'
+import { toScreen, PLAYER_COLORS, ENEMY_COLOR, COLS, ROWS, TH } from '../constants'
 import { TileMap } from '../objects/TileMap'
 import { PlayerSprite } from '../objects/Player'
 import { BombSprite } from '../objects/Bomb'
@@ -19,10 +19,15 @@ export class GameScene extends Phaser.Scene {
   constructor() { super('Game') }
 
   create() {
-    this.cameras.main.setBackgroundColor('#1a1a2e')
+    this.cameras.main.setBackgroundColor('#05070f')
+    // Gradient backdrop pinned to the screen, behind everything
+    this.add.image(0, 0, 'bg-grad')
+      .setOrigin(0, 0).setScrollFactor(0).setDepth(-1000)
+      .setDisplaySize(this.scale.width, this.scale.height)
     this.scene.launch('UI')   // UIScene is registered inactive; run it alongside the game
     this.map = new TileMap(this)
     this.cameras.main.setScroll(-OFFSET_X, -OFFSET_Y)
+    this.drawArena()
 
     const kb = this.input.keyboard!
     this.keys = {
@@ -40,8 +45,10 @@ export class GameScene extends Phaser.Scene {
       const ev = evs[evs.length - 1]
       if (!ev) return
       if (ev.type === 'explosion') {
-        for (const t of ev.tiles)
+        for (const t of ev.tiles) {
           this.map.updateTile(t.x, t.y, gameState.tiles[t.y]?.[t.x] ?? 0)
+          this.flashExplosion(t.x, t.y)
+        }
         this.cameras.main.shake(120, 0.004)
       }
       if (ev.type === 'end' || ev.type === 'stageClear')
@@ -102,5 +109,34 @@ export class GameScene extends Phaser.Scene {
     else if (k.right.isDown || k.d.isDown) dir = 'right'
     if (dir) { emit('game:input', { type: 'move', direction: dir }); this.lastInputAt = now }
     if (k.f.isDown) { emit('game:input', { type: 'bomb' }); this.lastInputAt = now }
+  }
+
+  /** A neon slab beneath the playfield so the arena reads as a platform, not floating tiles. */
+  private drawArena() {
+    const corners = [
+      toScreen(0, 0), toScreen(COLS - 1, 0),
+      toScreen(COLS - 1, ROWS - 1), toScreen(0, ROWS - 1),
+    ].map(p => ({ x: p.x, y: p.y - TH / 2 })) // lift to tile-centre level
+    const cx = corners.reduce((a, p) => a + p.x, 0) / 4
+    const cy = corners.reduce((a, p) => a + p.y, 0) / 4
+    const grow = (f: number) => corners.map(p => ({ x: cx + (p.x - cx) * f, y: cy + (p.y - cy) * f }))
+
+    const g = this.add.graphics().setDepth(-100)
+    g.fillStyle(0x4fc3f7, 0.05); g.fillPoints(grow(1.18), true)
+    g.fillStyle(0x4fc3f7, 0.07); g.fillPoints(grow(1.10), true)
+    g.fillStyle(0x0b1022, 0.96); g.fillPoints(grow(1.05), true)
+    g.lineStyle(2, 0x4fc3f7, 0.45); g.strokePoints(grow(1.05), true, true)
+  }
+
+  /** Quick expanding shockwave ring + flash at an exploded tile. */
+  private flashExplosion(tx: number, ty: number) {
+    const { x, y } = toScreen(tx, ty)
+    const cyy = y - TH / 2
+    const ring = this.add.circle(x, cyy, 6, 0xffd54f, 0.9)
+      .setDepth(this.map.getDepth(tx, ty) + 5)
+    this.tweens.add({
+      targets: ring, scale: 4, alpha: 0, duration: 320, ease: 'Cubic.easeOut',
+      onComplete: () => ring.destroy(),
+    })
   }
 }

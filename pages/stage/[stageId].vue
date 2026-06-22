@@ -44,19 +44,32 @@ onUnmounted(() => { phaserGame?.destroy(true); disconnect() })
 
 <template>
   <div class="game-page">
-    <div ref="gameRef" class="game-canvas" />
+    <div class="topbar">
+      <NuxtLink to="/stage" class="back">← 关卡列表</NuxtLink>
+      <span class="stage-tag">第 {{ stageId }} 关</span>
+      <span class="hint">方向键 / WASD 移动 · F / 💣 放炸弹</span>
+    </div>
+
+    <div class="stage-frame">
+      <div ref="gameRef" class="game-canvas" />
+    </div>
+
     <div v-if="result" class="overlay">
       <div class="result-card">
-        <h2>🎉 Stage Clear!</h2>
-        <p>EXP +{{ result.expGained }}</p>
-        <p v-if="result.drop">Drop: <b>{{ result.drop }}</b></p>
-        <p v-if="result.levelUp">🆙 Level Up → Lv {{ result.newLevel }}</p>
+        <div class="burst">🎉</div>
+        <h2>关卡通关！</h2>
+        <ul class="rewards">
+          <li><span>经验值</span><b class="exp">+{{ result.expGained }}</b></li>
+          <li v-if="result.drop"><span>掉落道具</span><b class="drop">{{ result.drop }}</b></li>
+          <li v-if="result.levelUp"><span>升级</span><b class="lvl">🆙 Lv {{ result.newLevel }}</b></li>
+        </ul>
         <div class="btns">
-          <button @click="navigateTo('/stage')">Stage List</button>
-          <button @click="navigateTo(`/stage/${stageId + 1}`)">Next Stage →</button>
+          <button class="ghost" @click="navigateTo('/stage')">关卡列表</button>
+          <button class="primary" @click="navigateTo(`/stage/${stageId + 1}`)">下一关 →</button>
         </div>
       </div>
     </div>
+
     <div class="dpad">
       <button @touchstart.prevent="emit('game:input',{type:'move',direction:'up'})"    class="u">▲</button>
       <button @touchstart.prevent="emit('game:input',{type:'move',direction:'left'})"  class="l">◀</button>
@@ -68,16 +81,84 @@ onUnmounted(() => { phaserGame?.destroy(true); disconnect() })
 </template>
 
 <style scoped>
-.game-page { position:relative; display:flex; flex-direction:column; align-items:center; min-height:100vh; }
-.game-canvas { width:800px; max-width:100vw; }
-.overlay { position:fixed; inset:0; background:rgba(0,0,0,.8); display:flex; align-items:center; justify-content:center; z-index:10; }
-.result-card { background:#16213e; padding:2rem; border-radius:12px; text-align:center; display:flex; flex-direction:column; gap:.75rem; min-width:280px; }
-.btns { display:flex; gap:.5rem; justify-content:center; margin-top:.5rem; }
-button { padding:.6rem 1.2rem; border-radius:8px; border:none; background:#e94560; color:#fff; cursor:pointer; }
-.dpad { display:none; position:fixed; bottom:1rem; right:1rem;
-  grid-template-areas:". u ." "l c r" ". d ."; gap:.25rem; }
-@media (pointer:coarse) { .dpad { display:grid; } }
-.dpad button { width:48px; height:48px; border-radius:50%; border:none; background:#0f3460cc; color:#fff; font-size:1.1rem; touch-action:none; }
-.dpad .u{grid-area:u} .dpad .l{grid-area:l} .dpad .c{grid-area:c;background:#e94560cc}
-.dpad .r{grid-area:r} .dpad .d{grid-area:d}
+.game-page {
+  position: relative; display: flex; flex-direction: column; align-items: center;
+  min-height: 100vh; padding: 1rem;
+  background:
+    radial-gradient(900px 400px at 50% 0%, #1a2550 0%, transparent 55%),
+    linear-gradient(180deg, #0c1228 0%, #05070f 100%);
+}
+.topbar {
+  width: 100%; max-width: 820px; display: flex; align-items: center; gap: 1rem;
+  margin-bottom: .9rem; color: #9fb3c8; font-size: .85rem; flex-wrap: wrap;
+}
+.back {
+  color: #9fb3c8; text-decoration: none; padding: .35rem .75rem;
+  border: 1px solid #2a3656; border-radius: 999px; transition: .2s;
+}
+.back:hover { color: #eaf6ff; border-color: #4fc3f7; background: #4fc3f71a; }
+.stage-tag {
+  font-weight: 800; color: #eaf6ff; padding: .3rem .7rem; border-radius: 8px;
+  background: linear-gradient(90deg, #4fc3f733, #b388ff33); border: 1px solid #4fc3f755;
+}
+.hint { margin-left: auto; opacity: .7; }
+
+.stage-frame {
+  padding: 8px; border-radius: 18px;
+  background: linear-gradient(160deg, #1a2342, #0d1226);
+  border: 1px solid #2a3656;
+  box-shadow: 0 24px 60px -24px #000, 0 0 0 1px #4fc3f722 inset;
+}
+.game-canvas { width: 800px; max-width: calc(100vw - 2.5rem); border-radius: 12px; overflow: hidden; }
+
+.overlay {
+  position: fixed; inset: 0; background: rgba(5, 7, 15, .82); backdrop-filter: blur(3px);
+  display: flex; align-items: center; justify-content: center; z-index: 10;
+}
+.result-card {
+  position: relative; min-width: 300px; padding: 2rem 2.25rem; text-align: center;
+  display: flex; flex-direction: column; gap: .65rem; border-radius: 20px;
+  background: linear-gradient(165deg, #1b2444 0%, #121a33 100%);
+  border: 1px solid #4fc3f755;
+  box-shadow: 0 30px 80px -24px #000, 0 0 36px -8px #4fc3f755;
+  animation: pop .45s cubic-bezier(.2, 1.3, .4, 1) both;
+}
+@keyframes pop { from { transform: scale(.8); opacity: 0 } to { transform: scale(1); opacity: 1 } }
+.burst { font-size: 2.6rem; line-height: 1; }
+.result-card h2 {
+  font-size: 1.5rem; font-weight: 800;
+  background: linear-gradient(90deg, #69f0ae, #4fc3f7); -webkit-background-clip: text;
+  background-clip: text; color: transparent;
+}
+.rewards { list-style: none; display: flex; flex-direction: column; gap: .5rem; margin: .4rem 0; }
+.rewards li {
+  display: flex; align-items: center; justify-content: space-between; gap: 1.5rem;
+  padding: .55rem .9rem; border-radius: 10px; background: #0b1022aa; border: 1px solid #2a3656;
+}
+.rewards span { color: #9fb3c8; font-size: .85rem; }
+.rewards b { font-size: 1rem; }
+.exp { color: #4fc3f7; }
+.drop { color: #ffd54f; }
+.lvl { color: #69f0ae; }
+.btns { display: flex; gap: .6rem; justify-content: center; margin-top: .5rem; }
+button {
+  padding: .65rem 1.3rem; border-radius: 10px; border: none; cursor: pointer;
+  font-weight: 700; font-size: .9rem; transition: transform .15s, filter .15s;
+}
+button:hover { transform: translateY(-2px); filter: brightness(1.1); }
+.primary { background: linear-gradient(90deg, #4fc3f7, #b388ff); color: #06122a; }
+.ghost { background: #0b1022; color: #cfe3f5; border: 1px solid #2a3656; }
+
+.dpad {
+  display: none; position: fixed; bottom: 1rem; right: 1rem;
+  grid-template-areas: ". u ." "l c r" ". d ."; gap: .3rem;
+}
+@media (pointer: coarse) { .dpad { display: grid; } }
+.dpad button {
+  width: 52px; height: 52px; border-radius: 50%; border: 1px solid #ffffff22;
+  background: #0f3460cc; color: #fff; font-size: 1.1rem; touch-action: none;
+  backdrop-filter: blur(4px);
+}
+.dpad .u { grid-area: u } .dpad .l { grid-area: l }
+.dpad .c { grid-area: c; background: #e94560cc } .dpad .r { grid-area: r } .dpad .d { grid-area: d }
 </style>
