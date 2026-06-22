@@ -83,6 +83,7 @@ export class GameScene extends Phaser.Scene {
         }
         const sp = this.players.get(p.id)!
         sp.update(p.x, p.y, p.hp, p.maxHp)
+        sp.setDepth(this.map.getDepth(p.x, p.y) + 2)
         if (!p.alive) sp.die()
       }
     }

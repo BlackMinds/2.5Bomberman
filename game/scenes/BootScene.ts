@@ -3,6 +3,10 @@ import { TW, TH } from '../constants'
 
 /** How far a wall block visually rises above the floor diamond. */
 const BLOCK_H = 28
+/** Cool neon used for the arena, floor grid and indestructible walls. */
+const NEON_COOL = 0x4fc3f7
+/** Warm neon that marks destructible "energy crates". */
+const NEON_WARM = 0xffb74d
 
 type Vec = Phaser.Types.Math.Vector2Like
 
@@ -32,17 +36,23 @@ export class BootScene extends Phaser.Scene {
   constructor() { super('Boot') }
 
   create() {
-    // Checkerboard floor — two shades for readability (classic Bomberman grid)
-    this.buildFloor('tile-floor',   0x4f8a63, 0x2f5a3e)
-    this.buildFloor('tile-floor-2', 0x59986e, 0x35643f)
+    // Dark grid floor — two cool shades so the playfield reads as a tech grid
+    this.buildFloor('tile-floor',   0x102a44, 0x3f86c2)
+    this.buildFloor('tile-floor-2', 0x0c2238, 0x336ea8)
 
-    // Indestructible wall — cool metal/stone
-    this.buildWall('tile-hard', { top: 0x9aa7b2, left: 0x66747f, right: 0x53616b, line: 0x33404a, style: 'metal' })
-    // Destructible wall — warm wooden crate
-    this.buildWall('tile-soft', { top: 0xc89a5a, left: 0x9c6f39, right: 0x80592c, line: 0x573a1b, style: 'crate' })
+    // Indestructible wall — dark metal with cool neon edges
+    this.buildWall('tile-hard', {
+      top: 0x1d3a54, left: 0x102434, right: 0x0a1825,
+      neon: NEON_COOL, frame: 0x06101a, style: 'metal',
+    })
+    // Destructible wall — dark "energy crate" ringed in warm neon
+    this.buildWall('tile-soft', {
+      top: 0x3a2a14, left: 0x281b0d, right: 0x1c1207,
+      neon: NEON_WARM, frame: 0x140d05, style: 'crate',
+    })
 
-    this.buildPlayer()
-    this.buildGloss()
+    this.buildUnit()
+    this.buildUnitFace()
     this.buildShadow()
     this.buildBomb()
     this.buildItem()
@@ -51,35 +61,40 @@ export class BootScene extends Phaser.Scene {
     this.scene.start('Game')
   }
 
-  /** A flat iso floor tile: darker grout border with a lighter inset. */
-  private buildFloor(key: string, fill: number, edge: number) {
+  /** A dark iso floor tile with a glowing neon grid edge. */
+  private buildFloor(key: string, base: number, line: number) {
     const g = this.make.graphics({ x: 0, y: 0 })
-    g.fillStyle(edge, 1)
+    // recessed grout
+    g.fillStyle(0x060c15, 1)
     g.fillPoints(diamond(TW / 2, TH / 2, TW, TH), true)
-    g.fillStyle(fill, 1)
-    g.fillPoints(diamond(TW / 2, TH / 2, TW - 6, TH - 4), true)
-    // faint top sheen
-    g.fillStyle(0xffffff, 0.05)
+    // dark inset panel
+    g.fillStyle(base, 1)
+    g.fillPoints(diamond(TW / 2, TH / 2, TW - 4, TH - 3), true)
+    // cool sheen across the upper half
+    g.fillStyle(line, 0.12)
     g.fillPoints([
       { x: TW / 2, y: 2 },
       { x: TW - 4, y: TH / 2 },
       { x: TW / 2, y: TH / 2 },
       { x: 4, y: TH / 2 },
     ], true)
+    // neon grid outline
+    g.lineStyle(1.2, line, 0.5)
+    g.strokePoints(diamond(TW / 2, TH / 2, TW - 4, TH - 3), true, true)
     g.generateTexture(key, TW, TH)
     g.destroy()
   }
 
-  /** An isometric cube: shaded top + left + right faces, rising BLOCK_H above the floor. */
+  /** An isometric cube: shaded faces rising BLOCK_H, ringed in neon along the lit edges. */
   private buildWall(
     key: string,
-    c: { top: number; left: number; right: number; line: number; style: 'metal' | 'crate' },
+    c: { top: number; left: number; right: number; neon: number; frame: number; style: 'metal' | 'crate' },
   ) {
     const H = BLOCK_H
     const texH = TH + H
     const g = this.make.graphics({ x: 0, y: 0 })
 
-    const top   = diamond(TW / 2, TH / 2, TW, TH) // top face, centre (32,16)
+    const top   = diamond(TW / 2, TH / 2, TW, TH)
     const left  = [
       { x: 0,      y: TH / 2 },
       { x: TW / 2, y: TH },
@@ -97,67 +112,112 @@ export class BootScene extends Phaser.Scene {
     g.fillStyle(c.left, 1);  g.fillPoints(left, true)
     g.fillStyle(c.right, 1); g.fillPoints(right, true)
     g.fillStyle(c.top, 1);   g.fillPoints(top, true)
+    // glow pooled on the top face
+    g.fillStyle(c.neon, 0.12)
+    g.fillPoints(diamond(TW / 2, TH / 2, TW - 12, TH - 7), true)
 
     if (c.style === 'crate') {
-      // wooden belt + vertical plank seam on each side face
-      g.lineStyle(1.5, c.line, 0.7)
+      // horizontal energy band across both side faces
+      g.lineStyle(1.5, c.neon, 0.45)
       g.beginPath(); g.moveTo(0, TH / 2 + H / 2); g.lineTo(TW / 2, TH + H / 2); g.strokePath()
       g.beginPath(); g.moveTo(TW, TH / 2 + H / 2); g.lineTo(TW / 2, TH + H / 2); g.strokePath()
-      g.beginPath(); g.moveTo(TW / 4, TH * 0.75); g.lineTo(TW / 4, TH * 0.75 + H); g.strokePath()
-      g.beginPath(); g.moveTo(TW * 0.75, TH * 0.75); g.lineTo(TW * 0.75, TH * 0.75 + H); g.strokePath()
     } else {
       // metal rivets at the face corners
-      g.fillStyle(0xeceff1, 0.55)
+      g.fillStyle(0xcdd9e3, 0.45)
       for (const [rx, ry] of [[8, 24], [8, 24 + H - 8], [TW - 8, 24], [TW - 8, 24 + H - 8]] as const)
         g.fillCircle(rx, ry, 1.6)
     }
 
-    // crisp outlines
-    g.lineStyle(1.5, c.line, 0.95)
-    g.strokePoints(top, true, true)
+    // dark structural outline on the side faces
+    g.lineStyle(1.5, c.frame, 1)
     g.strokePoints(left, true, true)
     g.strokePoints(right, true, true)
+    // neon along the top rim + the lit front vertical edge
+    g.lineStyle(2, c.neon, 0.85)
+    g.strokePoints(top, true, true)
+    g.beginPath(); g.moveTo(TW / 2, TH); g.lineTo(TW / 2, TH + H); g.strokePath()
+    // glow nodes where the front edge meets top and base
+    g.fillStyle(c.neon, 0.95)
+    g.fillCircle(TW / 2, TH, 2)
+    g.fillCircle(TW / 2, TH + H, 2)
 
     g.generateTexture(key, TW, texH)
     g.destroy()
   }
 
-  /** Player token: a glossy bead with a dark rim and soft bottom shading (tinted at runtime). */
-  private buildPlayer() {
-    const p = this.make.graphics({ x: 0, y: 0 })
-    p.fillStyle(0x0d1320, 1); p.fillCircle(24, 24, 21)   // rim (stays dark through tint)
-    p.fillStyle(0xffffff, 1); p.fillCircle(24, 23, 18)   // body (takes tint)
-    p.fillStyle(0x000000, 0.20); p.fillCircle(24, 28, 16) // bottom shading
-    p.generateTexture('player', 48, 48)
-    p.destroy()
+  /**
+   * Player/enemy token: a little neon mech (helmet + visor + body + feet).
+   * The body is light-grey so a runtime tint paints it the team colour, while
+   * the visor is pure white so the same tint makes it the brightest, glowing part.
+   */
+  private buildUnit() {
+    const W = 56, H = 64, cx = 28
+    const g = this.make.graphics({ x: 0, y: 0 })
+
+    const body: Vec[] = [
+      { x: 15, y: 36 }, { x: 41, y: 36 },
+      { x: 45, y: 57 }, { x: 11, y: 57 },
+    ]
+
+    // feet
+    g.fillStyle(0xb8c6d6, 1)
+    g.fillEllipse(20, 60, 13, 7)
+    g.fillEllipse(36, 60, 13, 7)
+    // torso
+    g.fillStyle(0xd2dfec, 1)
+    g.fillPoints(body, true)
+    // chest plate
+    g.fillStyle(0xc2d0e0, 1)
+    g.fillRoundedRect(19, 39, 18, 12, 4)
+    // helmet dome
+    g.fillStyle(0xdce8f5, 1)
+    g.fillCircle(cx, 22, 17)
+    // visor (brightest -> glows after tint)
+    g.fillStyle(0xffffff, 1)
+    g.fillRoundedRect(cx - 13, 17, 26, 10, 5)
+
+    // dark outlines (barely affected by tint, so they stay as crisp ink lines)
+    g.lineStyle(2.5, 0x0a121d, 1)
+    g.strokeCircle(cx, 22, 17)
+    g.strokePoints(body, true, true)
+    g.lineStyle(2, 0x0a121d, 0.9)
+    g.strokeRoundedRect(cx - 13, 17, 26, 10, 5)
+
+    g.generateTexture('player', W, H)
+    g.destroy()
   }
 
-  /** Specular highlight overlaid on the bead — never tinted, so it stays white. */
-  private buildGloss() {
+  /** Always-white visor glow — overlaid on the unit, never tinted, so the
+   *  "face" reads as a lit screen regardless of the team colour underneath. */
+  private buildUnitFace() {
     const g = this.make.graphics({ x: 0, y: 0 })
-    g.fillStyle(0xffffff, 0.85); g.fillEllipse(9, 7, 12, 9)
-    g.fillStyle(0xffffff, 0.45); g.fillEllipse(9, 7, 18, 14)
-    g.generateTexture('player-gloss', 20, 16)
+    g.fillStyle(0xffffff, 0.30); g.fillRoundedRect(2, 1.5, 24, 8, 3.5)  // soft screen glow
+    g.fillStyle(0xffffff, 0.95); g.fillRoundedRect(4, 2.5, 20, 2, 1)    // top reflection streak
+    g.fillStyle(0xffffff, 1)
+    g.fillCircle(10, 6, 2.1)                                            // eye glints
+    g.fillCircle(18, 6, 2.1)
+    g.generateTexture('player-face', 28, 12)
     g.destroy()
   }
 
   private buildShadow() {
     const sh = this.make.graphics({ x: 0, y: 0 })
-    sh.fillStyle(0x000000, 0.30); sh.fillEllipse(24, 8, 40, 13)
-    sh.generateTexture('shadow', 48, 16)
+    sh.fillStyle(0x000000, 0.35); sh.fillEllipse(28, 8, 44, 14)
+    sh.generateTexture('shadow', 56, 16)
     sh.destroy()
   }
 
-  /** Classic round bomb: dark sphere, highlight, fuse cap and spark. */
+  /** Classic round bomb: dark sphere, neon halo, highlight, fuse cap and spark. */
   private buildBomb() {
     const b = this.make.graphics({ x: 0, y: 0 })
-    b.fillStyle(0x05070d, 1);  b.fillCircle(18, 26, 14)   // body
+    b.fillStyle(NEON_COOL, 0.08); b.fillCircle(18, 26, 17)  // halo
+    b.fillStyle(0x05070d, 1);  b.fillCircle(18, 26, 14)     // body
     b.fillStyle(0x222838, 1);  b.fillCircle(18, 26, 12)
-    b.fillStyle(0x46506b, 0.9); b.fillCircle(13, 21, 4)   // highlight
+    b.fillStyle(0x46506b, 0.9); b.fillCircle(13, 21, 4)     // highlight
     b.fillStyle(0xffffff, 0.8); b.fillCircle(12, 20, 2)
-    b.fillStyle(0x2c3242, 1);  b.fillRect(15, 9, 6, 6)    // fuse cap
+    b.fillStyle(0x2c3242, 1);  b.fillRect(15, 9, 6, 6)      // fuse cap
     b.lineStyle(2, 0xc9a36b, 1); b.beginPath(); b.moveTo(18, 9); b.lineTo(25, 3); b.strokePath()
-    b.fillStyle(0xffca28, 1);  b.fillCircle(26, 2, 2.6)   // spark
+    b.fillStyle(0xffca28, 1);  b.fillCircle(26, 2, 2.6)     // spark
     b.fillStyle(0xfff59d, 1);  b.fillCircle(26, 2, 1.2)
     b.generateTexture('bomb', 36, 44)
     b.destroy()
