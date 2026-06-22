@@ -1,6 +1,19 @@
 ﻿import Phaser from 'phaser'
 import { TW, TH } from '../constants'
 
+/** Vertices of a `spikes`-point star centred at (cx, cy). Replaces the
+ *  non-existent Graphics.fillStar so the item texture can be generated. */
+function starPoints(cx: number, cy: number, spikes: number, outer: number, inner: number) {
+  const pts: Phaser.Types.Math.Vector2Like[] = []
+  const step = Math.PI / spikes
+  let rot = -Math.PI / 2
+  for (let i = 0; i < spikes; i++) {
+    pts.push({ x: cx + Math.cos(rot) * outer, y: cy + Math.sin(rot) * outer }); rot += step
+    pts.push({ x: cx + Math.cos(rot) * inner, y: cy + Math.sin(rot) * inner }); rot += step
+  }
+  return pts
+}
+
 export class BootScene extends Phaser.Scene {
   constructor() { super('Boot') }
 
@@ -36,9 +49,9 @@ export class BootScene extends Phaser.Scene {
     b.fillStyle(0x212121); b.fillCircle(16, 16, 14)
     b.generateTexture('bomb', 32, 32); b.destroy()
 
-    // Item
+    // Item (5-point star — Phaser Graphics has no fillStar, build the points manually)
     const it = this.make.graphics({ x: 0, y: 0 })
-    it.fillStyle(0xffeb3b); it.fillStar(12, 12, 5, 10, 5)
+    it.fillStyle(0xffeb3b); it.fillPoints(starPoints(12, 12, 5, 10, 5), true)
     it.generateTexture('item', 24, 24); it.destroy()
 
     this.scene.start('Game')
