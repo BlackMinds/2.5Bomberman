@@ -20,6 +20,7 @@ export class GameScene extends Phaser.Scene {
 
   create() {
     this.cameras.main.setBackgroundColor('#1a1a2e')
+    this.scene.launch('UI')   // UIScene is registered inactive; run it alongside the game
     this.map = new TileMap(this)
     this.cameras.main.setScroll(-OFFSET_X, -OFFSET_Y)
 
