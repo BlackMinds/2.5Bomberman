@@ -16,7 +16,10 @@
     navigateTo('/auth/login')
   }
 
-  const headers = computed(() => token.value ? { authorization: `Bearer ${token.value}` } : {})
+  const headers = computed<Record<string, string>>(() => {
+    if (!token.value) return {} as Record<string, string>
+    return { authorization: `Bearer ${token.value}` }
+  })
 
   return { token, username, userId, save, logout, headers }
 }

@@ -59,7 +59,7 @@ export class UIScene extends Phaser.Scene {
     this.tweens.add({ targets: this.bannerText, scale: 1, duration: 480, ease: 'Back.easeOut' })
   }
 
-  update() {
+  override update() {
     const s = gameState.timeLeft
     const m = Math.floor(s / 60000), sec = Math.floor((s % 60000) / 1000)
     this.timerText.setText(`⏱ ${m}:${sec.toString().padStart(2, '0')}`)
