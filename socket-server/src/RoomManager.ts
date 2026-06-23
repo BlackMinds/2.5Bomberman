@@ -1,5 +1,5 @@
 ﻿import { Server, Socket } from 'socket.io'
-import { RoomMeta, PlayerState } from './types'
+import type { RoomMeta, PlayerState, PlayerInput } from './types'
 import { createPlayer, createState, processInput, tick } from './GameEngine'
 import { createStageState, tickEnemies, isStageCleared } from './StageEngine'
 
@@ -18,7 +18,7 @@ export function createRoom(
   const room: RoomMeta = { id, mode: opts.mode, stageId: opts.stageId, maxPlayers: max, ready: new Set(), state }
   rooms.set(id, room)
   joinRoom(io, socket, id, playerData)
-  socket.emit('room:created', { roomId: id })
+  socket.emit('room:created', { roomId: id, mode: room.mode, stageId: room.stageId })
 }
 
 export function joinRoom(
@@ -29,6 +29,19 @@ export function joinRoom(
   if (!room || room.state.phase !== 'waiting') {
     socket.emit('error', 'Room not available'); return
   }
+  const existing = room.state.players.find(p => p.id === socket.id)
+  if (existing) {
+    existing.userId = playerData.userId
+    existing.username = playerData.username
+    existing.damage = playerData.stats.damage
+    existing.hp = Math.min(existing.hp, playerData.stats.hp)
+    existing.maxHp = playerData.stats.hp
+    existing.speed = playerData.stats.speed
+    socket.join(roomId)
+    ;(socket as any).roomId = roomId
+    io.to(roomId).emit('room:state', { players: room.state.players, roomId, mode: room.mode, stageId: room.stageId })
+    return
+  }
   if (room.state.players.length >= room.maxPlayers) {
     socket.emit('error', 'Room full'); return
   }
@@ -37,7 +50,7 @@ export function joinRoom(
   room.state.players.push(p)
   socket.join(roomId)
   ;(socket as any).roomId = roomId
-  io.to(roomId).emit('room:state', { players: room.state.players, roomId })
+  io.to(roomId).emit('room:state', { players: room.state.players, roomId, mode: room.mode, stageId: room.stageId })
 }
 
 export function setReady(io: Server, socket: Socket) {
@@ -45,7 +58,8 @@ export function setReady(io: Server, socket: Socket) {
   const room = rooms.get(roomId)
   if (!room) return
   room.ready.add(socket.id)
-  if (room.ready.size === room.state.players.length && room.state.players.length >= 1) {
+  const minPlayers = room.mode === 'pvp' ? 2 : 1
+  if (room.ready.size === room.state.players.length && room.state.players.length >= minPlayers) {
     startGame(io, room)
   }
 }
@@ -57,7 +71,7 @@ function startGame(io: Server, room: RoomMeta) {
   }
   room.state.phase = 'playing'
   room.startedAt = Date.now()
-  io.to(room.id).emit('game:start', { tiles: room.state.tiles })
+  io.to(room.id).emit('game:start', { tiles: room.state.tiles, roomId: room.id, mode: room.mode, stageId: room.stageId })
 
   room.loop = setInterval(() => {
     const now = Date.now()
@@ -71,6 +85,9 @@ function startGame(io: Server, room: RoomMeta) {
       items: room.state.items,
       tick: room.state.tick,
       timeLeft: room.state.timeLeft,
+      roomId: room.id,
+      mode: room.mode,
+      stageId: room.stageId,
     })
 
     for (const ev of events) io.to(room.id).emit('game:event', ev)
@@ -79,8 +96,10 @@ function startGame(io: Server, room: RoomMeta) {
     if (room.mode === 'pve' && isStageCleared(room.state as any)) {
       room.state.phase = 'ended'
       io.to(room.id).emit('stage:clear', {
+        stageId: room.stageId,
         duration: Math.floor((now - room.startedAt!) / 1000),
-        kills: room.state.players.filter(p => !(p as any).aiState).map(p => ({ userId: p.userId })),
+        kills: (room.state as any).enemies?.length ?? 0,
+        players: room.state.players.filter(p => !(p as any).aiState).map(p => ({ userId: p.userId })),
       })
     }
 
@@ -101,7 +120,7 @@ function clearRoom(io: Server, room: RoomMeta) {
   rooms.delete(room.id)
 }
 
-export function handleInput(socket: Socket, input: { type: 'move'|'bomb'; direction?: any }) {
+export function handleInput(socket: Socket, input: Partial<PlayerInput> | { type: 'move'|'bomb'; direction?: any }) {
   const room = rooms.get((socket as any).roomId)
   if (!room || room.state.phase !== 'playing') return
   processInput(room.state, socket.id, input, Date.now())
@@ -116,6 +135,6 @@ export function leaveRoom(io: Server, socket: Socket) {
   if (room.state.players.filter(p => !(p as any).aiState).length === 0) {
     clearRoom(io, room)
   } else {
-    io.to(roomId).emit('room:state', { players: room.state.players, roomId })
+    io.to(roomId).emit('room:state', { players: room.state.players, roomId, mode: room.mode, stageId: room.stageId })
   }
 }

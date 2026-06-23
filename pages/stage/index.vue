@@ -6,7 +6,7 @@ const loading = ref(true)
 
 onMounted(async () => {
   if (!useAuth().token.value) { navigateTo('/auth/login'); return }
-  try { stages.value = await $fetch('/api/stage/list', { headers: headers.value }) }
+  try { stages.value = await $fetch<any[]>('/api/stage/list' as any, { headers: headers.value }) }
   catch { err.value = '关卡列表加载失败' }
   finally { loading.value = false }
 })

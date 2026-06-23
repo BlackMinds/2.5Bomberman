@@ -1,17 +1,26 @@
-﻿import { GameState, PlayerState } from './types'
-import { Enemy, tickEnemy } from './EnemyAI'
+﻿import type { GameState, PlayerState } from './types'
+import { tickEnemy } from './EnemyAI'
+import type { Enemy } from './EnemyAI'
 import { createPlayer, createState, COLS, ROWS } from './GameEngine'
 import { STAGE_CONFIG } from './stageConfig'
 
 const ENEMY_SPAWNS = [
-  { x: 6, y: 5 }, { x: 8, y: 3 }, { x: 4, y: 7 },
-  { x: 10, y: 2 }, { x: 2, y: 8 }, { x: 9, y: 6 },
-  { x: 5, y: 2 }, { x: 7, y: 8 }, { x: 11, y: 4 }, { x: 3, y: 4 },
+  { x: 4, y: ROWS - 1.5 }, { x: 7, y: ROWS - 1.5 }, { x: 10, y: ROWS - 1.5 },
+  { x: 5, y: ROWS - 1.5 }, { x: 8, y: ROWS - 1.5 }, { x: 11, y: ROWS - 1.5 },
+  { x: 3, y: ROWS - 1.5 }, { x: 6, y: ROWS - 1.5 }, { x: 9, y: ROWS - 1.5 }, { x: 12, y: ROWS - 1.5 },
 ]
 
 export function createStageState(stageId: number, players: PlayerState[]): GameState & { enemies: Enemy[] } {
   const cfg = STAGE_CONFIG[stageId]
   const base = createState(players) as GameState & { enemies: Enemy[] }
+  base.tiles = base.tiles.map((row, r) => row.map(() => (r === ROWS - 1 ? 1 : 0)))
+  players.forEach((p, i) => {
+    p.x = 0.5 + i
+    p.y = ROWS - 1.5
+    p.vx = 0
+    p.vy = 0
+    p.onGround = false
+  })
   const count = cfg.enemyMin + Math.floor(Math.random() * (cfg.enemyMax - cfg.enemyMin + 1))
 
   base.enemies = Array.from({ length: count }, (_, i) => {

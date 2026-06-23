@@ -1,9 +1,17 @@
 ﻿export type Direction = 'up' | 'down' | 'left' | 'right'
 export type TileType  = 0 | 1 | 2   // floor | hard-wall | soft-wall
 
+export interface PlayerInput {
+  left: boolean
+  right: boolean
+  jump: boolean
+  bomb: boolean
+}
+
 export interface PlayerState {
   id: string; userId: string; username: string
-  x: number; y: number
+  x: number; y: number; vx: number; vy: number; onGround: boolean
+  input: PlayerInput
   hp: number; maxHp: number; alive: boolean
   damage: number; speed: number
   bombRange: number; maxBombs: number; activeBombs: number

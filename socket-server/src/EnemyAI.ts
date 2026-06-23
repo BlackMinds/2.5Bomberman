@@ -1,4 +1,4 @@
-﻿import { GameState, PlayerState } from './types'
+﻿import type { GameState, PlayerState } from './types'
 import { COLS, ROWS, processInput } from './GameEngine'
 
 export interface Enemy extends PlayerState {
@@ -43,8 +43,9 @@ export function tickEnemy(e: Enemy, state: GameState, now: number) {
     const dir = DIRS.find(d => {
       const [dx, dy] = D[d]
       const nx = e.x + dx, ny = e.y + dy
-      return nx >= 0 && nx < COLS && ny >= 0 && ny < ROWS &&
-        state.tiles[ny][nx] === 0 && dist({ x: nx, y: ny }, nb) > dist(e, nb)
+      const tx = Math.floor(nx), ty = Math.floor(ny)
+      return tx >= 0 && tx < COLS && ty >= 0 && ty < ROWS &&
+        state.tiles[ty][tx] === 0 && dist({ x: nx, y: ny }, nb) > dist(e, nb)
     }) ?? DIRS[(e.patrolTick) % 4]
     processInput(state, e.id, { type: 'move', direction: dir }, now)
   } else {

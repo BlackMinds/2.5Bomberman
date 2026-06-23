@@ -15,6 +15,7 @@ export class GameScene extends Phaser.Scene {
   private bombs   = new Map<string, BombSprite>()
   private keys!: Phaser.Types.Input.Keyboard.CursorKeys & { w: any; a: any; s: any; d: any; f: any }
   private lastInputAt = 0
+  private lastInput = { left: false, right: false, jump: false, bomb: false }
 
   constructor() { super('Game') }
 
@@ -56,7 +57,7 @@ export class GameScene extends Phaser.Scene {
     }, { deep: true })
   }
 
-  update() {
+  override update() {
     this.syncSprites()
     this.handleInput()
   }
@@ -101,15 +102,23 @@ export class GameScene extends Phaser.Scene {
 
   private handleInput() {
     const now = Date.now()
-    if (now - this.lastInputAt < 80) return
     const k = this.keys
-    let dir: string | null = null
-    if      (k.up.isDown    || k.w.isDown) dir = 'up'
-    else if (k.down.isDown  || k.s.isDown) dir = 'down'
-    else if (k.left.isDown  || k.a.isDown) dir = 'left'
-    else if (k.right.isDown || k.d.isDown) dir = 'right'
-    if (dir) { emit('game:input', { type: 'move', direction: dir }); this.lastInputAt = now }
-    if (k.f.isDown) { emit('game:input', { type: 'bomb' }); this.lastInputAt = now }
+    const input = {
+      left: k.left.isDown || k.a.isDown,
+      right: k.right.isDown || k.d.isDown,
+      jump: k.up.isDown || k.w.isDown || k.space.isDown,
+      bomb: k.f.isDown && !this.lastInput.bomb,
+    }
+    const changed = input.left !== this.lastInput.left ||
+      input.right !== this.lastInput.right ||
+      input.jump !== this.lastInput.jump ||
+      input.bomb !== this.lastInput.bomb
+
+    if (changed || now - this.lastInputAt >= 80) {
+      emit('game:input', input)
+      this.lastInputAt = now
+    }
+    this.lastInput = { ...input, bomb: k.f.isDown }
   }
 
   /** A neon slab beneath the playfield so the arena reads as a platform, not floating tiles. */

@@ -9,14 +9,14 @@ onMounted(() => { if (!useAuth().token.value) navigateTo('/auth/login') })
 async function createPvp() {
   const { connect, emit, gameState } = await import('~/game/network/GameClient')
   connect(config.public.socketServerUrl)
-  const { char } = useCharacter(); await char.value || useCharacter().fetch()
-  const c = useCharacter().char.value
-  emit('room:create', { opts: { mode: 'pvp' }, player: { userId: useAuth().userId.value, username: username.value, stats: charStats(c) } })
-  // Wait for roomCreated event
-  const unwatch = watch(() => gameState.events, (evs) => {
-    const ev = evs.find((e: any) => e.type === 'roomCreated')
+  const { char, fetch } = useCharacter(); await fetch()
+  const c = char.value
+  const start = gameState.events.length
+  const unwatch = watch(() => gameState.events.slice(start), (evs) => {
+    const ev = evs.find((e: any) => e.type === 'roomCreated' && e.mode === 'pvp')
     if (ev) { unwatch(); navigateTo(`/game/${ev.roomId}`) }
   }, { deep: true })
+  emit('room:create', { opts: { mode: 'pvp' }, player: { userId: useAuth().userId.value, username: username.value, stats: charStats(c) } })
 }
 
 async function joinRoom() {
@@ -72,4 +72,3 @@ h2 { text-align:center; }
 input { flex:1; padding:.5rem; border-radius:8px; border:1px solid #444; background:#0f3460; color:#eee; }
 .err { color:#e94560; }
 </style>
-
